@@ -27,7 +27,8 @@ static std::string readFile(const std::string& file){
 
 // --- Utility helpers
 
-static int digit(char c){ // Convert ASCII char to a digit 
+static int digit(char c){ 
+    // Convert ASCII char to a digit 
     return c-'0';
 }
 

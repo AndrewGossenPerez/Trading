@@ -8,4 +8,6 @@ namespace trd{
     using price=double;
     using quantity=int;
 
+    enum Type{Buy,Sell,None}; 
+    
 };
