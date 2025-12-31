@@ -7,7 +7,7 @@ A work-in-progress trading engine with a C++ backtester and a Python front-end f
 - [x] Modular strategy framework  
 - [x] Historical market data ingestion (csv) 
 - [ ] High-speed backtesting engine
-- [ ] Event-driven architecture 
+- [X] Event-driven architecture 
 - [ ] Full order lifecycle management (create / modify / cancel / fill)  
 - [ ] Support for common order types (market / limit / stop)  
 - [ ] Simulated exchange / matching engine  
