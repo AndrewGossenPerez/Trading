@@ -22,18 +22,7 @@ class PortfolioHandler{
                 m_portfolio.sell(ev->qty,ev->px,ev->fee);
             }
 
-            std::cout << "[FILL] side=" << (ev->side==trd::Side::Buy ? "BUY" : "SELL")
-            << " qty=" << ev->qty
-            << " px=" << ev->px
-            << " fee=" << ev->fee
-            << " -> pos=" << m_portfolio.pos
-            << " balance=" << m_portfolio.balance
-            << "\n";
-
-
         }
-
-
 
     }
 

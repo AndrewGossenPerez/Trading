@@ -16,7 +16,7 @@ class ExcecutionHandler{
         if (auto* ev=std::get_if<events::OrderEvent>(&event)){
             // Is an order event 
 
-            trd::price px=m_exce.slip(m_marketState.next.open,ev->side); // APply slippage model
+            trd::price px=m_exce.slip(m_marketState.next.open,ev->side); // Apply slippage model
             trd::price fee=m_exce.fee;
 
             m_bus.push( // Add on the fill event now to update portfolio details 

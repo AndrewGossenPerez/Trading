@@ -8,31 +8,32 @@ struct Signal{
     trd::Side side=trd::Side::Hold;
 };
 
-// Main strategy parent struct 
 struct Strategy{
     
     public: 
 
     virtual ~Strategy()=default;
-    virtual Signal onBar(const trd::Bar& bar)=0;
+    virtual Signal onBar(const trd::Bar& bar)=0; // Pure virtual function, 
+    // each derieved strategy will define it's own way to interpret bars into signals
 
 };
 
-
-class CoinFlipStrategy : public Strategy {
+class CoinFlipStrategy : public Strategy { // Just a simple coin-flip strategy to sanity check the engine 
 
     public:
-    CoinFlipStrategy() : rng_(std::random_device{}()), dist_(0, 1) {}
+
+    CoinFlipStrategy() : m_rng(std::random_device{}()), m_dist(0, 1) {}
 
     Signal onBar(const trd::Bar&) override {
-        int flip = dist_(rng_);
+        int flip = m_dist(m_rng);
         if (flip == 0) return { trd::Side::Buy };
         else return { trd::Side::Sell };
     }
 
     private:
-    std::mt19937 rng_;
-    std::uniform_int_distribution<int> dist_;
+
+    std::mt19937 m_rng;
+    std::uniform_int_distribution<int> m_dist;
 
 };
 

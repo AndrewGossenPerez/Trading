@@ -9,11 +9,10 @@
 #include "backtesting/strategies.hpp"
 #include "backtesting/backtesting.hpp"
 #include "data/csv_reader.hpp"
+#include "data/config.hpp"
 #include <cstdio>
 
 int main(){
-
-    using clock = std::chrono::steady_clock;
 
     std::printf("--- BACK TEST STARTING --- \n");
 
@@ -30,8 +29,12 @@ int main(){
     std::vector<trd::Bar> bars=reader.loadBars("samples/aapl.csv");
     trd::Result re=bt.run(bars,strat);
 
-    std::cout << " --- RESULTS --- \n";
-    std::printf("Starting equity: %.2f\n", startingEquity);
-    std::printf("Final equity: %.2f\n", re.finalEquity);
+    std::cout << "\n --- RESULTS --- \n";
+    std::printf("[Starting equity]: %.2f\n", startingEquity);
+    std::printf("[Final equity]: %.2f\n", re.finalEquity);
+    std::printf("[Net Trades]: %d\n", (int)re.trades.size());
+    std::printf("[Equity Points]: %d\n", (int)re.equityPoints.size());
+    std::printf("[Cumulated Fees]: %d\n", (int)re.netFees);
+    std::printf("[Slippage Basis Points]: %d\n", (int)SLIP_BPS);
 
 }
