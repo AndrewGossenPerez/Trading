@@ -1,2 +1,10 @@
-*.vscode 
-*.DS_Store
+# macOS
+.DS_Store
+
+# my editor
+.vscode/
+
+# build output
+build/
+*.o
+*.out
