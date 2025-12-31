@@ -1,0 +1,45 @@
+
+#pragma once 
+#include "core/portfolio.hpp"
+#include "events/events.hpp"
+#include <iostream>
+
+class PortfolioHandler{
+
+    public:
+
+    explicit PortfolioHandler(Portfolio& portfolio) : m_portfolio(portfolio) {}
+
+    void on(const events::Event& event){
+
+        if (auto* ev=std::get_if<events::FillEvent>(&event)){
+            // Event is a Fill event
+            
+            if (ev->side == trd::Side::Buy) { 
+                // Apply a buy action
+                m_portfolio.buy(ev->qty,ev->px,ev->fee);
+            } else if (ev->side == trd::Side::Sell) { 
+                m_portfolio.sell(ev->qty,ev->px,ev->fee);
+            }
+
+            std::cout << "[FILL] side=" << (ev->side==trd::Side::Buy ? "BUY" : "SELL")
+            << " qty=" << ev->qty
+            << " px=" << ev->px
+            << " fee=" << ev->fee
+            << " -> pos=" << m_portfolio.pos
+            << " balance=" << m_portfolio.balance
+            << "\n";
+
+
+        }
+
+
+
+    }
+
+    
+    private: 
+
+    Portfolio& m_portfolio;
+
+};

@@ -2,14 +2,21 @@
 #pragma once 
 #include "core/types.hpp"
 
-struct Excecution{
 
-    trd::price fee{1.0};
-    trd::price slipping_bps{0.0};
+class Excecution{
 
-    double slip(double px,trd::Type buy) const {
-        double s=px*(slipping_bps/10'000.0);
-        return (buy==trd::Type::Buy) ? px+s:px-s; // Ensure slippage always harms the portfolio 
-    }
+    public:
 
+    trd::price fee{0.0};
+
+    Excecution()=default;
+    
+    explicit Excecution(trd::price tradeFee) : fee(tradeFee) {}
+
+    // Slippage model to ensure each trade harms the portfolio 
+    // Given the reference prifce ref_px and the side, return price after slippage 
+    trd::price slip(trd::price refPrice,trd::Side side) const;
+
+
+    
 };

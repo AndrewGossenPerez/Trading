@@ -1,8 +1,10 @@
 // dispatcher.hpp, created by Andrew Gossen.
 
+#pragma once 
 #include <vector>
 #include <functional>
 #include <utility>
+#include <deque>
 #include "events/events.hpp"
 
 namespace events{
@@ -18,7 +20,7 @@ public:
     void subscribe(Handler h){ // Register a new handler that will receive every dispatched event 
         m_handlers.push_back(std::move(h)); // Avoid un-needed copy 
     }
-    void push(Event e){ // Add a new event to the schedule, processed immediately. 
+    void push(Event e){ // Add a new event to the queue
         m_queue.push_back(std::move(e)); // Yet again, use the r-value overload to avoid copying 
     }
 
@@ -27,11 +29,9 @@ public:
     }
 
     void dispatchSingle(){ 
-
         // Dispatch a single event (One at front of queue) to all handler functions  
-
         Event e=std::move(m_queue.front()); // Get the first event in the queue 
-        m_queue.erase(m_queue.begin());
+        m_queue.pop_front();
 
         for (auto& handler : m_handlers){ // Dispatch this event to all handler functions 
             handler(e);
@@ -40,20 +40,17 @@ public:
     }
 
     void dispatchAll(){ 
-
         // Dispatch all events in the queue 
-
         while (!empty()){
             dispatchSingle();
         }
 
     }
 
-
 private:
     
-    // FIFO queue for pending events 
-    std::vector<Event> m_queue;
+    // fast FIFO queue for pending events 
+    std::deque<Event> m_queue;
     // Registered event handlers 
     std::vector<Handler> m_handlers;
 
