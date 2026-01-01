@@ -4,23 +4,21 @@
 #include "backtesting/strategies.hpp"
 #include "events/dispatcher.hpp"
 
+template <typename dispatchT>
 class StrategyHandler{
 
     public:
 
-    StrategyHandler(Strategy& strat,events::Dispatcher& bus) : m_strat(strat),m_bus(bus) {};
+    StrategyHandler(Strategy& strat,dispatchT& dispatcher) : m_strat(strat),m_dispatcher(dispatcher) {};
 
-    void on(const events::Event& event){
+    void on(const events::MarketEvent& event){
 
-        if (auto* ev=std::get_if<events::MarketEvent>(&event)){
-            // Is a market event 
-            Signal signal=m_strat.onBar(ev->bar); // Apply strategy on the bar to generate a singal
-            if (signal.side!=trd::Side::Hold){
-                // Timestamp the signal so we don't trade on the same bar 
-                m_bus.push( // Push the signal event to be handled by the risk handler 
-                    events::SignalEvent{ev->next.epoch,signal.side}
-                );
-            }
+        Signal signal=m_strat.onBar(event.bar); // Apply strategy on the bar to generate a singal
+        if (signal.side!=trd::Side::Hold){
+            // Timestamp the signal so we don't trade on the same bar 
+            m_dispatcher.schedule( // Push the signal event to be handled by the risk handler 
+                events::SignalEvent{event.next.epoch,signal.side}
+            );
         }
 
     }
@@ -28,6 +26,6 @@ class StrategyHandler{
     private:
 
     Strategy& m_strat;
-    events::Dispatcher& m_bus;
+    dispatchT& m_dispatcher;
 
 };

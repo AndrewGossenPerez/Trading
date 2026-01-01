@@ -10,16 +10,25 @@
 namespace trd{ 
 
 struct TradeLog { // Stores each completed trade 
+
     trd::timestamp epoch;  
     trd::Side side;     
     trd::quantity qty;    
     trd::price price;      
-    trd::price fee;        
+    trd::price fee;     
+
+    TradeLog(trd::timestamp e,trd::Side s,trd::quantity q,trd::price p,trd::price f)
+    : epoch(e), side(s), qty(q), price(p), fee(f) {}
+    
 };
 
 struct EquityPoint { // Used to graph equity as a function of time
+
     trd::timestamp epoch;
     trd::price equity;
+    
+    EquityPoint(trd::timestamp e,trd::price eq) : epoch(e), equity(eq) {} 
+
 };
 
 struct Trade{ // An excecuted trade during a FillEvent evnet 

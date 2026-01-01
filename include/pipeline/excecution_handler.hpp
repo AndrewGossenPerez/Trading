@@ -5,31 +5,30 @@
 #include "events/events.hpp"
 #include "events/dispatcher.hpp"
 
+template <typename dispatchT>
 class ExcecutionHandler{
 
     public:
 
-    ExcecutionHandler(Excecution& exce,trd::MarketState& marketState,events::Dispatcher& bus) 
-    : m_exce(exce), m_marketState(marketState), m_bus(bus) {};
+    ExcecutionHandler(Excecution& exce,trd::MarketState& marketState,dispatchT& dispatcher) 
+    : m_exce(exce), m_marketState(marketState), m_dispatcher(dispatcher) {};
 
-    void on(const events::Event& event){
-        if (auto* ev=std::get_if<events::OrderEvent>(&event)){
-            // Is an order event 
+    void on(const events::OrderEvent& event){
 
-            trd::price px=m_exce.slip(m_marketState.next.open,ev->side); // Apply slippage model
-            trd::price fee=m_exce.fee;
+         // Is an order event 
+        trd::price px=m_exce.slip(m_marketState.next.open,event.side); // Apply slippage model
+        trd::price fee=m_exce.fee;
 
-            m_bus.push( // Add on the fill event now to update portfolio details 
-                events::FillEvent{ev->epoch,ev->side,ev->qty,px,fee}
-            );
+        m_dispatcher.schedule( // Add on the fill event now to update portfolio details 
+            events::FillEvent{event.epoch,event.side,event.qty,px,fee}
+        );
 
-        }
     }
 
     private:
 
     Excecution& m_exce;
     trd::MarketState& m_marketState;
-    events::Dispatcher& m_bus;
+    dispatchT& m_dispatcher;
     
 };

@@ -7,7 +7,6 @@
 #include "backtesting/backtesting.hpp"
 #include <vector>
 
-
 class ReportHandler{ 
 
     public:
@@ -15,29 +14,24 @@ class ReportHandler{
     ReportHandler(trd::MarketState& marketState,Portfolio& portfolio,trd::Result& result) : m_marketState(marketState), 
     m_portfolio(portfolio), m_result(result) {}
 
-    void on(const events::Event& event){
+    void on(const events::FillEvent& event){ 
+        // Trade was completed, log this trade 
+        m_trades.emplace_back( 
+                event.epoch,
+                event.side,
+                event.qty,
+                event.px,
+                event.fee
+        );
 
-        if (auto* ev=std::get_if<events::FillEvent>(&event)){
-            // Log this trade 
-            m_trades.emplace_back( 
-                    ev->epoch,
-                    ev->side,
-                    ev->qty,
-                    ev->px,
-                    ev->fee
-            );
+        m_result.netFees+=event.fee;
+    }
 
-            m_result.netFees+=ev->fee;
-
-        } else if (auto* ev=std::get_if<events::MarketEvent>(&event)){
-            // Log equity 
-            m_equityCurve.emplace_back( 
-                    m_marketState.current.epoch,
-                    m_portfolio.equity(m_marketState.current.close)
-            );
-
-        }
-
+    void equityPoint(){
+        m_equityCurve.emplace_back( 
+            m_marketState.current.epoch,
+            m_portfolio.equity(m_marketState.current.close)
+        );
     }
 
     std::vector<trd::TradeLog> getTrades() { return m_trades; }
@@ -47,8 +41,9 @@ class ReportHandler{
 
     trd::MarketState m_marketState;
     Portfolio m_portfolio;
-    std::vector<trd::TradeLog> m_trades;
-    std::vector<trd::EquityPoint> m_equityCurve;
     trd::Result& m_result;
+
+    std::vector<trd::TradeLog> m_trades; // Stores each succesful trade ( i.e. fill ) after an excecution is completed 
+    std::vector<trd::EquityPoint> m_equityCurve; // Stores the portfolio's equity after each market event 
 
 };

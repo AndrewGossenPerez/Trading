@@ -5,54 +5,78 @@
 #include <functional>
 #include <utility>
 #include <deque>
+#include <iostream>
+
 #include "events/events.hpp"
+#include "events/ring_buffer.hpp"
+#include "data/market_state.hpp"
+#include "backtesting/backtesting.hpp"
+
+#include "pipeline/strategy_handler.hpp"
+#include "pipeline/risk_handler.hpp"
+#include "pipeline/portfolio_handler.hpp"
+#include "pipeline/excecution_handler.hpp"
+#include "pipeline/trace_handler.hpp"
+#include "pipeline/report_handler.hpp"
 
 namespace events{
 
+template <std::size_t capacity>
 class Dispatcher{
 
-public:
+    // StrategyHandler - ( MarketEvent -> SignalEvent)
+    // RiskHandler - ( SignalEvent -> OrderEvent )
+    // ExcecutionHandler - (OrderEvent -> FillEvent )
+    // PortfolioHandler - ( FillEvent -> Final action ) 
 
-    // A handler is a calleable that accepts an event
-    // 
-    using Handler = std::function<void(const Event&)>;
+    public:
 
-    void subscribe(Handler h){ // Register a new handler that will receive every dispatched event 
-        m_handlers.push_back(std::move(h)); // Avoid un-needed copy 
+    Dispatcher(Excecution& exce,Strategy& strat,trd::MarketState& marketState,Portfolio& portfolio,trd::Result& result) : 
+    m_handlerStrat(strat,*this),
+    m_handlerRisk(portfolio,*this),
+    m_handlerExce(exce,marketState,*this),
+    m_handlerPort(portfolio),
+    m_handlerReport(marketState,portfolio,result) {} 
+
+    using queue=RingBuffer<Event,capacity>;
+
+    bool schedule(Event ev){ // Schedule an event, i.e. add to the ring-buffer to be dispatched 
+        return m_queue.push(std::move(ev));
     }
-    void push(Event e){ // Add a new event to the queue
-        m_queue.push_back(std::move(e)); // Yet again, use the r-value overload to avoid copying 
-    }
 
-    bool empty() const {  
-        return m_queue.empty();
-    }
-
-    void dispatchSingle(){ 
-        // Dispatch a single event (One at front of queue) to all handler functions  
-        Event e=std::move(m_queue.front()); // Get the first event in the queue 
-        m_queue.pop_front();
-
-        for (auto& handler : m_handlers){ // Dispatch this event to all handler functions 
-            handler(e);
+    void run(){  // Dispatch all events in the ringbuffer ( Calls 'on' )
+        Event e;
+        while (m_queue.pop(e)){
+            dispatch(e);
         }
-
     }
 
-    void dispatchAll(){ 
-        // Dispatch all events in the queue 
-        while (!empty()){
-            dispatchSingle();
-        }
+    // Overload 'on' functions to run the appropraite handler 
+    void on(const events::MarketEvent& ev) { m_handlerStrat.on(ev); m_handlerReport.equityPoint(); } 
+    void on(const events::SignalEvent& ev) { m_handlerRisk.on(ev); }
+    void on(const events::OrderEvent& ev) { m_handlerExce.on(ev); }
+    void on(const events::FillEvent& ev) { m_handlerPort.on(ev); m_handlerReport.on(ev); }
 
+    ReportHandler getReportHandler(){
+        return m_handlerReport;
     }
 
-private:
-    
-    // fast FIFO queue for pending events 
-    std::deque<Event> m_queue;
-    // Registered event handlers 
-    std::vector<Handler> m_handlers;
+    private: 
+
+    void dispatch(Event& e){ // Will dispatch an event, i.e. run the appropriate handler through overload resolution 
+        std::visit( 
+            [this](auto const& event){this->on(event);},
+            e
+        );
+    }
+
+    queue m_queue{};
+
+    StrategyHandler<Dispatcher> m_handlerStrat;
+    RiskHandler<Dispatcher> m_handlerRisk;
+    ExcecutionHandler<Dispatcher> m_handlerExce;
+    PortfolioHandler m_handlerPort;
+    ReportHandler m_handlerReport;
 
 };
 

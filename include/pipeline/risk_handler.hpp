@@ -3,39 +3,28 @@
 #include "events/dispatcher.hpp"
 #include "events/events.hpp"
 #include "core/portfolio.hpp"
+#include "events/dispatcher.hpp"
 
-namespace trd{
+template <typename dispatchT>
+struct RiskHandler{
 
-class RiskHandler{
+    RiskHandler(Portfolio& portfolio,dispatchT& dispatcher) : m_portfolio(portfolio), m_dispatcher(dispatcher) {};
 
-    public:
-
-    RiskHandler(Portfolio& portfolio,events::Dispatcher& bus) : m_portfolio(portfolio), m_bus(bus) {};
-
-    void on(const events::Event& event){
-
-        if (auto* ev=std::get_if<events::SignalEvent>(&event)){
-            // Is a signal event 
-            if (ev->side==trd::Side::Buy && m_portfolio.pos==0){
-                // Buy Signal
-                m_bus.push( // Push an order to purchase one asset 
-                    events::OrderEvent{ev->epoch,ev->side,1}
-                );
-            } else if (ev->side==trd::Side::Sell && m_portfolio.pos > 0 ){
-                // Sell signal 
-                m_bus.push(  // Push an order to sell all assets 
-                    events::OrderEvent{ev->epoch,ev->side,m_portfolio.pos}
-                );
-            }
-        } // Else hold and do nothing 
-
+    void on(const events::SignalEvent& event){
+        // Is a signal event 
+        if (event.side==trd::Side::Buy && m_portfolio.pos==0){
+            // Buy Signal
+            m_dispatcher.schedule(events::OrderEvent{event.epoch,event.side,1});
+        } else if (event.side==trd::Side::Sell && m_portfolio.pos > 0 ){
+            // Sell signal 
+            m_dispatcher.schedule(events::OrderEvent{event.epoch,event.side,m_portfolio.pos});
+        }
     }
 
     private:
 
     Portfolio& m_portfolio;
-    events::Dispatcher& m_bus;
+    dispatchT& m_dispatcher;
 
 };
 
-}
